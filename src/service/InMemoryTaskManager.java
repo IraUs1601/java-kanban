@@ -43,8 +43,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Map<Integer, Task> getAllTasks() {
-        return tasks;
+    public List<Task> getAllTasks() {
+        return new ArrayList<>(tasks.values());
     }
 
     @Override
@@ -78,8 +78,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Map<Integer, Epic> getAllEpics() {
-        return epics;
+    public List<Epic> getAllEpics() {
+        return new ArrayList<>(epics.values());
     }
 
     @Override
@@ -130,8 +130,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Map<Integer, Subtask> getAllSubtasks() {
-        return subtasks;
+    public List<Subtask> getAllSubtasks() {
+        return new ArrayList<>(subtasks.values());
     }
 
     @Override

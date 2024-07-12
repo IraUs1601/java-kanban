@@ -72,18 +72,18 @@ public class Main {
 
     private static void printAllTasks(TaskManager manager) {
         System.out.println("Задачи:");
-        for (Task task : manager.getAllTasks().values()) {
+        for (Task task : manager.getAllTasks()) {
             System.out.println(task);
         }
         System.out.println("Эпики:");
-        for (Epic epic : manager.getAllEpics().values()) {
+        for (Epic epic : manager.getAllEpics()) {
             System.out.println(epic);
             for (Subtask subtask : manager.getEpicSubtasks(epic.getId())) {
                 System.out.println("--> " + subtask);
             }
         }
         System.out.println("Подзадачи:");
-        for (Subtask subtask : manager.getAllSubtasks().values()) {
+        for (Subtask subtask : manager.getAllSubtasks()) {
             System.out.println(subtask);
         }
 
