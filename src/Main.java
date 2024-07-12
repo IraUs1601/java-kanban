@@ -16,6 +16,7 @@ public class Main {
 
         // Получение по идентификатору
         Task retrievedTask = taskManager.get(task1.getId());
+
         if (retrievedTask != null) {
             System.out.println("Идентификатор задачи: " + retrievedTask);
         } else {
@@ -60,6 +61,7 @@ public class Main {
         // Вывод всех задач, эпиков, подзадач и истории просмотров после удаления
         printAllTasks(taskManager);
     }
+
     private static void updateTaskStatus(TaskManager manager, Task task, Task.Status status) {
         task.setStatus(status);
         manager.update(task);
@@ -75,6 +77,7 @@ public class Main {
         for (Task task : manager.getAllTasks()) {
             System.out.println(task);
         }
+
         System.out.println("Эпики:");
         for (Epic epic : manager.getAllEpics()) {
             System.out.println(epic);
@@ -82,6 +85,7 @@ public class Main {
                 System.out.println("--> " + subtask);
             }
         }
+
         System.out.println("Подзадачи:");
         for (Subtask subtask : manager.getAllSubtasks()) {
             System.out.println(subtask);
