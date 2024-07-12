@@ -30,7 +30,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void delete(int id) {
-        tasks.remove(id);
+        Task task = tasks.remove(id);
+        if (task != null) {
+            historyManager.remove(id);
+        }
     }
 
     @Override
