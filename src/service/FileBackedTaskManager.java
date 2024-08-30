@@ -11,7 +11,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     public FileBackedTaskManager(File file) {
         this.file = file;
-        loadFromFile();
+        loadTasksFromFile();
     }
 
     @Override
@@ -57,7 +57,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         save();
     }
 
-    protected void save() { // Changed to protected
+    private void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("id,type,name,status,description,epic\n");
             for (Task task : getAllTasks()) {
@@ -74,57 +74,59 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
     }
 
-    protected void loadFromFile() {
+    private void loadTasksFromFile() {
+        System.out.println("Начало загрузки из файла: " + file.getAbsolutePath());
+
+        int maxTasks = 1000;
+        int taskCount = 0;
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String header = reader.readLine(); // Пропустить заголовок
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",", -1); // Добавить параметр -1 для предотвращения усечения
-                if (parts.length < 5) continue; // Пропускать некорректные строки
+            String line = reader.readLine();
+            System.out.println("Пропущен заголовок.");
+            while ((line = reader.readLine()) != null && taskCount < maxTasks) {
+                System.out.println("Чтение строки: " + line);
+                Task task = fromString(line);
+                if (task != null) {
 
-                int id = Integer.parseInt(parts[0]);
-                String type = parts[1];
-                String name = parts[2];
-                Task.Status status = Task.Status.valueOf(parts[3]);
-                String description = parts[4];
-                Integer epicId = parts.length > 5 && !parts[5].isEmpty() ? Integer.parseInt(parts[5]) : null;
-
-                // Восстановление задач
-                if (type.equals("TASK")) {
-                    Task task = new Task(id, name, description, status);
-                    create(task);
-                } else if (type.equals("EPIC")) {
-                    Epic epic = new Epic(id, name, description);
-                    createEpic(epic);
-                } else if (type.equals("SUBTASK")) {
-                    Subtask subtask = new Subtask(id, name, description, status, epicId);
-                    createSubtask(subtask);
+                    if (get(task.getId()) == null) {
+                        System.out.println("Создана задача: " + task);
+                        if (task instanceof Epic) {
+                            createEpic((Epic) task);
+                        } else if (task instanceof Subtask) {
+                            createSubtask((Subtask) task);
+                        } else {
+                            create(task);
+                        }
+                        taskCount++;
+                    } else {
+                        System.out.println("Задача с id " + task.getId() + " уже существует.");
+                    }
+                } else {
+                    System.out.println("Ошибка при создании задачи из строки: " + line);
                 }
             }
         } catch (IOException e) {
+            System.out.println("Ошибка при чтении файла: " + e.getMessage());
             throw new ManagerSaveException("Ошибка при загрузке данных из файла.", e);
         }
+        System.out.println("Загрузка из файла завершена.");
     }
 
-    private Task taskFromString(String line) {
-        String[] parts = line.split(",");
-        if (parts.length < 5) {
-            throw new IllegalArgumentException("Неверный формат строки: " + line);
-        }
-
+    private Task fromString(String value) {
+        String[] parts = value.split(",");
         int id = Integer.parseInt(parts[0]);
-        String type = parts[1];
+        Task.TaskType type = Task.TaskType.valueOf(parts[1]);
         String name = parts[2];
         Task.Status status = Task.Status.valueOf(parts[3]);
         String description = parts[4];
-        int epicId = parts.length > 5 ? Integer.parseInt(parts[5]) : -1;
 
         switch (type) {
-            case "TASK":
+            case TASK:
                 return new Task(id, name, description, status);
-            case "EPIC":
+            case EPIC:
                 return new Epic(id, name, description);
-            case "SUBTASK":
+            case SUBTASK:
+                int epicId = Integer.parseInt(parts[5]);
                 return new Subtask(id, name, description, status, epicId);
             default:
                 throw new IllegalArgumentException("Неизвестный тип задачи: " + type);
@@ -163,7 +165,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     public static FileBackedTaskManager loadFromFile(File file) {
         FileBackedTaskManager manager = new FileBackedTaskManager(file);
-        manager.loadFromFile();
+        manager.loadTasksFromFile();
         return manager;
     }
 }
