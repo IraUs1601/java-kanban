@@ -20,17 +20,17 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
         return new InMemoryTaskManager();
     }
 
+    @BeforeEach
+    void setUp() {
+        taskManager = new InMemoryTaskManager();
+    }
+
     @Test
     void testPerformanceWithLargeNumberOfTasks() {
         for (int i = 1; i <= 10000; i++) {
             taskManager.create(new Task(i, "Task " + i, "Description " + i, Task.Status.NEW));
         }
-        assertTrue(taskManager.getAllTasks().size() == 10000, "Все 10000 задач должны быть добавлены и доступны.");
-    }
-
-    @BeforeEach
-    void setUp() {
-        taskManager = new InMemoryTaskManager();
+        assertEquals(10000, taskManager.getAllTasks().size(), "Все 10000 задач должны быть добавлены и доступны.");
     }
 
     @Test
