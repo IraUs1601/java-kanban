@@ -15,6 +15,30 @@ public class Task {
         this.status = status;
     }
 
+    public static Task fromString(String value) {
+        String[] parts = value.split(",", -1);
+        if (parts.length < 5) {
+            return null;
+        }
+        int id = Integer.parseInt(parts[0]);
+        TaskType type = TaskType.valueOf(parts[1]);
+        String name = parts[2];
+        Status status = Status.valueOf(parts[3]);
+        String description = parts[4];
+        int epicId = parts.length > 5 ? Integer.parseInt(parts[5]) : -1;
+
+        switch (type) {
+            case TASK:
+                return new Task(id, name, description, status);
+            case EPIC:
+                return new Epic(id, name, description);
+            case SUBTASK:
+                return new Subtask(id, name, description, status, epicId);
+            default:
+                return null;
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -26,6 +50,16 @@ public class Task {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%d,%s,%s,%s,%s",
+                id,
+                TaskType.TASK,
+                name,
+                status,
+                description);
     }
 
     public int getId() {
@@ -64,5 +98,11 @@ public class Task {
         NEW,
         IN_PROGRESS,
         DONE
+    }
+
+    public enum TaskType {
+        TASK,
+        EPIC,
+        SUBTASK
     }
 }
