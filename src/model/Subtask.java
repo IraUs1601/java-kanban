@@ -1,12 +1,14 @@
 package model;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Subtask extends Task {
-    private int epicId;
+    private final int epicId;
 
-    public Subtask(int id, String name, String description, Status status, int epicId) {
-        super(id, name, description, status);
+    public Subtask(int id, String name, String description, Status status, int epicId, Duration duration, LocalDateTime startTime) {
+        super(id, name, description, status, duration, startTime);
 
         if (epicId == id) {
             throw new IllegalArgumentException("Подзадача не может быть отдельным эпиком.");
@@ -14,12 +16,12 @@ public class Subtask extends Task {
         this.epicId = epicId;
     }
 
-    public int getEpicId() {
-        return epicId;
+    public Subtask(int id, String name, String description, Status status, int epicId) {
+        this(id, name, description, status, epicId, Duration.ofMinutes(0), LocalDateTime.now());
     }
 
-    public void setEpicId(int epicId) {
-        this.epicId = epicId;
+    public int getEpicId() {
+        return epicId;
     }
 
     @Override

@@ -1,42 +1,86 @@
 package model;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Task {
     private int id;
-    private String name;
-    private String description;
+    private final String name;
+    private final String description;
     private Status status;
+    private Duration duration;
+    private LocalDateTime startTime;
 
-    public Task(int id, String name, String description, Status status) {
+    public Task(int id, String name, String description, Status status, Duration duration, LocalDateTime startTime) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.status = status;
+        this.duration = duration;
+        this.startTime = startTime;
     }
 
-    public static Task fromString(String value) {
-        String[] parts = value.split(",", -1);
-        if (parts.length < 5) {
+    public Task(int id, String name, String description, Status status) {
+        this(id, name, description, status, Duration.ofMinutes(0), LocalDateTime.now());
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public Duration getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Duration duration) {
+        this.duration = duration;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        if (startTime == null || duration == null) {
             return null;
         }
-        int id = Integer.parseInt(parts[0]);
-        TaskType type = TaskType.valueOf(parts[1]);
-        String name = parts[2];
-        Status status = Status.valueOf(parts[3]);
-        String description = parts[4];
-        int epicId = parts.length > 5 ? Integer.parseInt(parts[5]) : -1;
+        return startTime.plus(duration);
+    }
 
-        switch (type) {
-            case TASK:
-                return new Task(id, name, description, status);
-            case EPIC:
-                return new Epic(id, name, description);
-            case SUBTASK:
-                return new Subtask(id, name, description, status, epicId);
-            default:
-                return null;
+    public boolean isTimeOverlapping(Task other) {
+        if (this.getStartTime() == null || other.getStartTime() == null) {
+            return false;
         }
+
+        LocalDateTime thisEndTime = this.getEndTime();
+        LocalDateTime otherEndTime = other.getEndTime();
+
+        return this.getStartTime().isBefore(otherEndTime) && other.getStartTime().isBefore(thisEndTime);
     }
 
     @Override
@@ -60,38 +104,6 @@ public class Task {
                 name,
                 status,
                 description);
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
     }
 
     public enum Status {

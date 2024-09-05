@@ -1,11 +1,12 @@
 package service;
 
 import model.Task;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class InMemoryHistoryManagerTest {
     private InMemoryHistoryManager historyManager;
@@ -25,9 +26,9 @@ class InMemoryHistoryManagerTest {
 
         List<Task> history = historyManager.getHistory();
 
-        Assertions.assertEquals(2, history.size(), "Неверное количество задач в истории.");
-        Assertions.assertEquals(task1, history.get(0), "Первая задача в истории не соответствует добавленной.");
-        Assertions.assertEquals(task2, history.get(1), "Вторая задача в истории не соответствует добавленной.");
+        assertEquals(2, history.size(), "Неверное количество задач в истории.");
+        assertEquals(task1, history.get(0), "Первая задача в истории не соответствует добавленной.");
+        assertEquals(task2, history.get(1), "Вторая задача в истории не соответствует добавленной.");
     }
 
     @Test
@@ -35,8 +36,8 @@ class InMemoryHistoryManagerTest {
         Task task1 = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW);
         historyManager.add(task1);
         List<Task> history = historyManager.getHistory();
-        Assertions.assertEquals(1, history.size());
-        Assertions.assertEquals(task1, history.get(0));
+        assertEquals(1, history.size());
+        assertEquals(task1, history.get(0));
     }
 
     @Test
@@ -47,8 +48,8 @@ class InMemoryHistoryManagerTest {
         historyManager.add(task2);
         historyManager.remove(task1.getId());
         List<Task> history = historyManager.getHistory();
-        Assertions.assertEquals(1, history.size());
-        Assertions.assertEquals(task2, history.get(0));
+        assertEquals(1, history.size());
+        assertEquals(task2, history.get(0));
     }
 
     @Test
@@ -57,7 +58,7 @@ class InMemoryHistoryManagerTest {
         historyManager.add(task1);
         historyManager.add(task1);
         List<Task> history = historyManager.getHistory();
-        Assertions.assertEquals(1, history.size());
+        assertEquals(1, history.size());
     }
 
     @Test
@@ -69,10 +70,10 @@ class InMemoryHistoryManagerTest {
         historyManager.add(task2);
         historyManager.add(task3);
         List<Task> history = historyManager.getHistory();
-        Assertions.assertEquals(3, history.size());
-        Assertions.assertEquals(task1, history.get(0));
-        Assertions.assertEquals(task2, history.get(1));
-        Assertions.assertEquals(task3, history.get(2));
+        assertEquals(3, history.size());
+        assertEquals(task1, history.get(0));
+        assertEquals(task2, history.get(1));
+        assertEquals(task3, history.get(2));
     }
 
     @Test
@@ -81,7 +82,7 @@ class InMemoryHistoryManagerTest {
         historyManager.add(task1);
         historyManager.remove(2);
         List<Task> history = historyManager.getHistory();
-        Assertions.assertEquals(1, history.size());
-        Assertions.assertEquals(task1, history.get(0));
+        assertEquals(1, history.size());
+        assertEquals(task1, history.get(0));
     }
 }
