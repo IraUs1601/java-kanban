@@ -191,7 +191,7 @@ public class InMemoryTaskManager implements TaskManager {
                 .noneMatch(existingTask -> newTask.isTimeOverlapping(existingTask) && existingTask.getId() != newTask.getId());
     }
 
-    public static class TaskStartTimeComparator implements Comparator<Task> {
+    private static class TaskStartTimeComparator implements Comparator<Task> {
         @Override
         public int compare(Task task1, Task task2) {
             return Comparator.comparing(Task::getStartTime,
