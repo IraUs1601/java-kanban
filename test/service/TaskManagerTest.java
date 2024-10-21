@@ -6,6 +6,8 @@ import model.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,31 +23,44 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testAddAndGetTask() {
+    void testCreateAndGetTask() {
         Task task = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW);
         taskManager.create(task);
-
-        Task retrievedTask = taskManager.get(1);
-        assertEquals(task, retrievedTask, "Полученная задача не соответствует добавленной.");
+        assertEquals(task, taskManager.get(task.getId()), "Задача должна быть успешно создана и доступна для получения.");
     }
 
     @Test
-    void testAddDifferentTasksAndGetById() {
-        Task task = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW);
-        Epic epic = new Epic(2, "Эпик 1", "Описание эпика 2");
-        Subtask subtask = new Subtask(3, "Подзадача 1", "Описание подзадачи 3", Subtask.Status.IN_PROGRESS, 2);
-
-        taskManager.create(task);
+    void testCreateAndGetEpicAndSubtasks() {
+        Epic epic = new Epic(1, "Эпик 1", "Описание эпика 1");
         taskManager.createEpic(epic);
+        assertEquals(epic, taskManager.getEpic(epic.getId()), "Эпик должен быть успешно создан и доступен для получения.");
+
+        Subtask subtask = new Subtask(2, "Подзадача 1", "Описание подзадачи 1", Task.Status.NEW, epic.getId());
+        taskManager.createSubtask(subtask);
+        assertEquals(subtask, taskManager.getSubtask(subtask.getId()), "Подзадача должна быть успешно создана и доступна для получения.");
+
+        assertEquals(1, taskManager.getEpicSubtasks(epic.getId()).size(), "Количество подзадач в эпике должно соответствовать созданным.");
+    }
+
+    @Test
+    void testRemoveTask() {
+        Task task = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW);
+        taskManager.create(task);
+        taskManager.delete(task.getId());
+        assertNull(taskManager.get(task.getId()), "Задача должна быть удалена.");
+    }
+
+    @Test
+    void testRemoveEpicAndSubtasks() {
+        Epic epic = new Epic(1, "Эпик 1", "Описание эпика 1");
+        taskManager.createEpic(epic);
+
+        Subtask subtask = new Subtask(2, "Подзадача 1", "Описание подзадачи 1", Task.Status.NEW, epic.getId());
         taskManager.createSubtask(subtask);
 
-        Task retrievedTask = taskManager.get(1);
-        Epic retrievedEpic = taskManager.getEpic(2);
-        Subtask retrievedSubtask = taskManager.getSubtask(3);
-
-        assertEquals(task, retrievedTask, "Полученная задача не соответствует добавленной.");
-        assertEquals(epic, retrievedEpic, "Полученный эпик не соответствует добавленному.");
-        assertEquals(subtask, retrievedSubtask, "Полученная подзадача не соответствует добавленной.");
+        taskManager.removeEpic(epic.getId());
+        assertNull(taskManager.getEpic(epic.getId()), "Эпик должен быть удален.");
+        assertNull(taskManager.getSubtask(subtask.getId()), "Подзадачи удаленного эпика также должны быть удалены.");
     }
 
     @Test
@@ -82,20 +97,6 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testDataIntegrityOnEpicAndSubtaskRemoval() {
-        Epic epic = new Epic(1, "Эпик 1", "Описание эпика 1");
-        Subtask subtask = new Subtask(2, "Подзадача 1", "Описание подзадачи 1", Task.Status.NEW, epic.getId());
-        taskManager.createEpic(epic);
-        taskManager.createSubtask(subtask);
-
-        taskManager.removeSubtask(subtask.getId());
-        assertTrue(taskManager.getEpic(epic.getId()).getSubtasks().isEmpty(), "Эпик не должен содержать удаленные подзадачи.");
-
-        taskManager.removeEpic(epic.getId());
-        assertNull(taskManager.getSubtask(subtask.getId()), "Подзадачи удаленного эпика не должны существовать.");
-    }
-
-    @Test
     void testUpdateSubtaskStatus() {
         Epic epic = new Epic(1, "Эпик 1", "Описание эпика 1");
         Subtask subtask = new Subtask(2, "Подзадача 1", "Описание подзадачи 1", Task.Status.NEW, epic.getId());
@@ -110,14 +111,54 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
+    void testEpicStatusUpdateWithSubtasks() {
+        Epic epic = new Epic(1, "Эпик 1", "Описание эпика 1");
+        taskManager.createEpic(epic);
+
+        Subtask subtask1 = new Subtask(2, "Подзадача 1", "Описание подзадачи 1", Task.Status.NEW, epic.getId());
+        Subtask subtask2 = new Subtask(3, "Подзадача 2", "Описание подзадачи 2", Task.Status.DONE, epic.getId());
+        taskManager.createSubtask(subtask1);
+        taskManager.createSubtask(subtask2);
+
+        assertEquals(Task.Status.IN_PROGRESS, taskManager.getEpic(epic.getId()).getStatus(), "Статус эпика должен быть обновлен на 'IN_PROGRESS', если есть задачи с разными статусами.");
+    }
+
+    @Test
     void testRemoveTaskFromHistoryOnDelete() {
         Task task = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW);
         taskManager.create(task);
-        taskManager.get(task.getId());  // Добавляем в историю
+        taskManager.get(task.getId());
         taskManager.delete(task.getId());
 
         List<Task> history = taskManager.getHistory();
         assertFalse(history.contains(task), "История не должна содержать удаленную задачу.");
+    }
+
+    @Test
+    void testHistoryTracking() {
+        Task task1 = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW);
+        Task task2 = new Task(2, "Задача 2", "Описание задачи 2", Task.Status.IN_PROGRESS);
+        taskManager.create(task1);
+        taskManager.create(task2);
+
+        taskManager.get(task1.getId());
+        taskManager.get(task2.getId());
+
+        List<Task> history = taskManager.getHistory();
+        assertEquals(2, history.size(), "История должна содержать все просмотренные задачи.");
+        assertEquals(task1, history.get(0), "Первая задача в истории должна соответствовать задаче 1.");
+        assertEquals(task2, history.get(1), "Вторая задача в истории должна соответствовать задаче 2.");
+    }
+
+    @Test
+    void testTaskOverlap() {
+        Task task1 = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW, Duration.ofMinutes(60), LocalDateTime.of(2024, 8, 31, 10, 0));
+        Task task2 = new Task(2, "Задача 2", "Описание задачи 2", Task.Status.NEW, Duration.ofMinutes(30), LocalDateTime.of(2024, 8, 31, 10, 30));
+        taskManager.create(task1);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> taskManager.create(task2),
+                "Задача не должна пересекаться по времени с другой задачей.");
     }
 
     @Test
@@ -148,31 +189,42 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testHistoryTracking() {
-        Task task1 = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW);
-        Task task2 = new Task(2, "Задача 2", "Описание задачи 2", Task.Status.IN_PROGRESS);
+    void testCreateNonOverlappingTasks() {
+        Task task1 = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW, Duration.ofMinutes(60), LocalDateTime.of(2024, 8, 31, 10, 0));
+        Task task2 = new Task(2, "Задача 2", "Описание задачи 2", Task.Status.NEW, Duration.ofMinutes(60), LocalDateTime.of(2024, 8, 31, 11, 0));
+
         taskManager.create(task1);
         taskManager.create(task2);
 
-        taskManager.get(task1.getId());
-        taskManager.get(task2.getId());
-
-        List<Task> history = taskManager.getHistory();
-        assertEquals(2, history.size(), "История должна содержать все просмотренные задачи.");
-        assertEquals(task1, history.get(0), "Первая задача в истории должна соответствовать задаче 1.");
-        assertEquals(task2, history.get(1), "Вторая задача в истории должна соответствовать задаче 2.");
+        assertEquals(task1, taskManager.get(task1.getId()), "Задача 1 должна быть успешно создана.");
+        assertEquals(task2, taskManager.get(task2.getId()), "Задача 2 должна быть успешно создана.");
     }
 
     @Test
-    void testEpicStatusUpdateWithSubtasks() {
-        Epic epic = new Epic(1, "Эпик 1", "Описание эпика 1");
-        taskManager.createEpic(epic);
+    void testCreateOverlappingTasks() {
+        Task task1 = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW, Duration.ofMinutes(90), LocalDateTime.of(2024, 8, 31, 10, 0));
+        Task task2 = new Task(2, "Задача 2", "Описание задачи 2", Task.Status.NEW, Duration.ofMinutes(60), LocalDateTime.of(2024, 8, 31, 10, 30));
 
-        Subtask subtask1 = new Subtask(2, "Подзадача 1", "Описание подзадачи 1", Task.Status.NEW, epic.getId());
-        Subtask subtask2 = new Subtask(3, "Подзадача 2", "Описание подзадачи 2", Task.Status.DONE, epic.getId());
-        taskManager.createSubtask(subtask1);
-        taskManager.createSubtask(subtask2);
+        taskManager.create(task1);
 
-        assertEquals(Task.Status.IN_PROGRESS, taskManager.getEpic(epic.getId()).getStatus(), "Статус эпика должен быть обновлен на 'IN_PROGRESS', если есть задачи с разными статусами.");
+        assertThrows(IllegalArgumentException.class,
+                () -> taskManager.create(task2),
+                "Ожидалось исключение IllegalArgumentException при попытке создать пересекающуюся задачу.");
+
+    }
+
+    @Test
+    void testUpdateTaskWithOverlap() {
+        Task task1 = new Task(1, "Задача 1", "Описание задачи 1", Task.Status.NEW, Duration.ofMinutes(90), LocalDateTime.of(2024, 8, 31, 10, 0));
+        Task task2 = new Task(2, "Задача 2", "Описание задачи 2", Task.Status.NEW, Duration.ofMinutes(60), LocalDateTime.of(2024, 8, 31, 12, 0));
+
+        taskManager.create(task1);
+        taskManager.create(task2);
+
+        task2.setStartTime(LocalDateTime.of(2024, 8, 31, 10, 30));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> taskManager.update(task2),
+                "Ожидалось исключение IllegalArgumentException при попытке обновить задачу с пересекающимся временем.");
     }
 }
