@@ -41,5 +41,8 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="java-kanban" level="project" />
+    <orderEntry type="library" name="src" level="application" />
+    <orderEntry type="library" name="gson-2.9.0" level="application" />
   </component>
 </module>
